@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MinLength, IsBoolean, IsDateString } from 'class-validator';
+import { IsEmail, IsOptional, IsString, MinLength, IsBoolean, IsDateString, ValidateIf } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -31,8 +31,9 @@ export class UpdateUserDto {
   address?: string;
 
   @IsOptional()
+  @ValidateIf((o) => o.dateOfBirth !== null && o.dateOfBirth !== '' && o.dateOfBirth !== undefined)
   @IsDateString()
-  dateOfBirth?: string;
+  dateOfBirth?: string | null;
 
   @IsOptional()
   @IsBoolean()

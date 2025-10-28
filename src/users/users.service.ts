@@ -43,7 +43,22 @@ export class UsersService {
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     console.log('Updating user:', id, 'with:', updateUserDto);
-    await this.usersRepository.update(id, updateUserDto);
+    
+    // Clean up empty strings to prevent database errors
+    const cleanedDto: any = { ...updateUserDto };
+    
+    // Remove empty strings and set them to null or undefined
+    Object.keys(cleanedDto).forEach(key => {
+      if (cleanedDto[key] === '' || cleanedDto[key] === null) {
+        if (key === 'dateOfBirth') {
+          cleanedDto[key] = null;
+        }
+      }
+    });
+    
+    console.log('Cleaned DTO:', cleanedDto);
+    
+    await this.usersRepository.update(id, cleanedDto as any);
     const updatedUser = await this.findOne(id);
     console.log('Updated user:', updatedUser);
     return updatedUser;
