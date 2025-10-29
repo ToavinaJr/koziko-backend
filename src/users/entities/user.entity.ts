@@ -74,7 +74,10 @@ export class User {
   comments: Comment[];
 
   @OneToMany(() => Message, (message) => message.sender)
-  messages: Message[];
+  sentMessages: Message[];
+
+  @OneToMany(() => Message, (message) => message.receiver)
+  receivedMessages: Message[];
 
   @OneToMany(() => Notification, (notification) => notification.user)
   notifications: Notification[];
