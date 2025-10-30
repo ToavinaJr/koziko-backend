@@ -92,4 +92,53 @@ export class AuthService {
 
     return user;
   }
+
+  async googleLogin(googleUser: any): Promise<{ access_token: string; user: User }> {
+    // Check if user exists
+    let user = await this.usersRepository.findOne({
+      where: { email: googleUser.email },
+    });
+
+    if (!user) {
+      // Create new user from Google profile
+      const username = googleUser.email.split('@')[0];
+      const fullName = googleUser.fullName || googleUser.email.split('@')[0];
+      
+      user = this.usersRepository.create({
+        email: googleUser.email,
+        fullName: fullName,
+        username: username,
+        avatarUrl: googleUser.avatarUrl || '',
+        password: '', // No password for OAuth users
+      });
+
+      await this.usersRepository.save(user);
+    } else {
+      // Update avatar and fullName if provided
+      let needsUpdate = false;
+      
+      if (googleUser.avatarUrl && user.avatarUrl !== googleUser.avatarUrl) {
+        user.avatarUrl = googleUser.avatarUrl;
+        needsUpdate = true;
+      }
+      
+      if (googleUser.fullName && (!user.fullName || user.fullName.includes('undefined'))) {
+        user.fullName = googleUser.fullName;
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        await this.usersRepository.save(user);
+      }
+    }
+
+    // Generate JWT token
+    const payload = { email: user.email, sub: user.id };
+    const access_token = this.jwtService.sign(payload);
+
+    return {
+      access_token,
+      user,
+    };
+  }
 }
