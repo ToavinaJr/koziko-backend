@@ -67,4 +67,19 @@ export class UsersController {
   getFollowRequests(@Request() req) {
     return this.usersService.getFollowRequests(req.user.id);
   }
+
+  @Get(':id/followers')
+  getFollowers(@Param('id') id: string) {
+    return this.usersService.getFollowers(id);
+  }
+
+  @Get(':id/following')
+  getFollowing(@Param('id') id: string) {
+    return this.usersService.getFollowing(id);
+  }
+
+  @Get('discover/users')
+  getDiscoverUsers(@Request() req) {
+    return this.usersService.getDiscoverUsers(req.user.id);
+  }
 }

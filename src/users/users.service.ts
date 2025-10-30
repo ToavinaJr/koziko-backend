@@ -70,6 +70,37 @@ export class UsersService {
 
   // Follow functionality
   async sendFollowRequest(fromUserId: string, toUserId: string): Promise<FollowRequest> {
+    // Check if there's already a pending request from the other user
+    const existingRequest = await this.followRequestsRepository.findOne({
+      where: [
+        // Check if toUser already sent a request to fromUser
+        {
+          senderId: toUserId,
+          receiverId: fromUserId,
+          status: FollowRequestStatus.PENDING,
+        },
+        // Check if fromUser already sent a request to toUser
+        {
+          senderId: fromUserId,
+          receiverId: toUserId,
+          status: FollowRequestStatus.PENDING,
+        },
+      ],
+    });
+
+    // If toUser already sent a request to fromUser, auto-accept it instead
+    if (existingRequest && existingRequest.senderId === toUserId) {
+      // Auto-accept the existing request
+      await this.acceptFollowRequest(existingRequest.id);
+      return existingRequest;
+    }
+
+    // If fromUser already sent a request to toUser, return the existing one
+    if (existingRequest && existingRequest.senderId === fromUserId) {
+      return existingRequest;
+    }
+
+    // Create new request
     const followRequest = this.followRequestsRepository.create({
       senderId: fromUserId,
       receiverId: toUserId,
@@ -86,21 +117,37 @@ export class UsersService {
       throw new NotFoundException('Follow request not found');
     }
 
+    // Check if relationship already exists
+    const existingRelation = await this.usersRepository
+      .createQueryBuilder()
+      .select('1')
+      .from('user_followers', 'uf')
+      .where('uf.userId = :receiverId', { receiverId: request.receiverId })
+      .andWhere('uf.followerId = :senderId', { senderId: request.senderId })
+      .getRawOne();
+
+    if (existingRelation) {
+      // Relationship already exists, just update the request status
+      request.status = FollowRequestStatus.ACCEPTED;
+      await this.followRequestsRepository.save(request);
+      return;
+    }
+
     // Update request status
     request.status = FollowRequestStatus.ACCEPTED;
     await this.followRequestsRepository.save(request);
 
-    // Add follower relationship
-    const fromUser = await this.findOne(request.senderId);
-    const toUser = await this.findOne(request.receiverId);
-
-    if (!toUser.followers) toUser.followers = [];
-    if (!fromUser.following) fromUser.following = [];
-
-    toUser.followers.push(fromUser);
-    fromUser.following.push(toUser);
-
-    await this.usersRepository.save([fromUser, toUser]);
+    // Add follower relationship using query builder to avoid duplicates
+    await this.usersRepository
+      .createQueryBuilder()
+      .insert()
+      .into('user_followers')
+      .values({
+        userId: request.receiverId,
+        followerId: request.senderId,
+      })
+      .orIgnore() // Ignore if already exists (PostgreSQL)
+      .execute();
   }
 
   async rejectFollowRequest(requestId: string): Promise<void> {
@@ -136,9 +183,77 @@ export class UsersService {
   }
 
   async getFollowRequests(userId: string): Promise<FollowRequest[]> {
-    return this.followRequestsRepository.find({
+    // Get both received and sent requests
+    const received = await this.followRequestsRepository.find({
       where: { receiverId: userId, status: FollowRequestStatus.PENDING },
       relations: ['sender'],
     });
+
+    const sent = await this.followRequestsRepository.find({
+      where: { senderId: userId, status: FollowRequestStatus.PENDING },
+      relations: ['receiver'],
+    });
+
+    // Return all requests with proper formatting
+    return [...received, ...sent];
+  }
+
+  async getFollowers(userId: string): Promise<User[]> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['followers'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.followers || [];
+  }
+
+  async getFollowing(userId: string): Promise<User[]> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['following'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.following || [];
+  }
+
+  async getDiscoverUsers(currentUserId: string): Promise<User[]> {
+    // Get all users except:
+    // 1. The current user
+    // 2. Users the current user is already following
+    // 3. Users who are following the current user
+    // 4. Users with pending follow requests (sent or received)
+    
+    const users = await this.usersRepository
+      .createQueryBuilder('user')
+      .where('user.id != :currentUserId', { currentUserId })
+      // Exclude users we're following
+      .andWhere(`user.id NOT IN (
+        SELECT "followerId" FROM user_followers WHERE "userId" = :currentUserId
+      )`, { currentUserId })
+      // Exclude users following us
+      .andWhere(`user.id NOT IN (
+        SELECT "userId" FROM user_followers WHERE "followerId" = :currentUserId
+      )`, { currentUserId })
+      // Exclude users with pending requests we sent
+      .andWhere(`user.id NOT IN (
+        SELECT "receiverId" FROM follow_requests 
+        WHERE "senderId" = :currentUserId AND status = :pendingStatus
+      )`, { currentUserId, pendingStatus: FollowRequestStatus.PENDING })
+      // Exclude users who sent us pending requests
+      .andWhere(`user.id NOT IN (
+        SELECT "senderId" FROM follow_requests 
+        WHERE "receiverId" = :currentUserId AND status = :pendingStatus
+      )`, { currentUserId, pendingStatus: FollowRequestStatus.PENDING })
+      .getMany();
+
+    return users;
   }
 }
