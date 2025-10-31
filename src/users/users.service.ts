@@ -21,19 +21,79 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.usersRepository.find({
-      relations: ['followers', 'following'],
-    });
+    const users = await this.usersRepository.find();
+
+    // Add counts to each user using QueryBuilder
+    const usersWithCounts = await Promise.all(
+      users.map(async (user) => {
+        const postsCount = await this.usersRepository
+          .createQueryBuilder('user')
+          .leftJoin('user.posts', 'post')
+          .where('user.id = :id', { id: user.id })
+          .select('COUNT(post.id)', 'count')
+          .getRawOne();
+
+        const followersCount = await this.usersRepository
+          .createQueryBuilder()
+          .select('COUNT(*)', 'count')
+          .from('user_followers', 'uf')
+          .where('uf.userId = :id', { id: user.id })
+          .getRawOne();
+
+        const followingCount = await this.usersRepository
+          .createQueryBuilder()
+          .select('COUNT(*)', 'count')
+          .from('user_followers', 'uf')
+          .where('uf.followerId = :id', { id: user.id })
+          .getRawOne();
+
+        user.postsCount = parseInt(postsCount?.count || '0', 10);
+        user.followersCount = parseInt(followersCount?.count || '0', 10);
+        user.followingCount = parseInt(followingCount?.count || '0', 10);
+
+        return user;
+      })
+    );
+
+    return usersWithCounts;
   }
 
   async findOne(id: string): Promise<User> {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['followers', 'following', 'groups'],
+      relations: ['groups'],
     });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    // Use QueryBuilder to count posts, followers, and following
+    const postsCount = await this.usersRepository
+      .createQueryBuilder('user')
+      .leftJoin('user.posts', 'post')
+      .where('user.id = :id', { id })
+      .select('COUNT(post.id)', 'count')
+      .getRawOne();
+
+    const followersCount = await this.usersRepository
+      .createQueryBuilder()
+      .select('COUNT(*)', 'count')
+      .from('user_followers', 'uf')
+      .where('uf.userId = :id', { id })
+      .getRawOne();
+
+    const followingCount = await this.usersRepository
+      .createQueryBuilder()
+      .select('COUNT(*)', 'count')
+      .from('user_followers', 'uf')
+      .where('uf.followerId = :id', { id })
+      .getRawOne();
+
+    // Add counts
+    user.postsCount = parseInt(postsCount?.count || '0', 10);
+    user.followersCount = parseInt(followersCount?.count || '0', 10);
+    user.followingCount = parseInt(followingCount?.count || '0', 10);
+
     return user;
   }
 

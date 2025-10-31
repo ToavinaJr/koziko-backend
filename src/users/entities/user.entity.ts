@@ -90,4 +90,9 @@ export class User {
 
   @OneToMany(() => FollowRequest, (followRequest) => followRequest.receiver)
   receivedFollowRequests: FollowRequest[];
+
+  // Virtual properties for counts
+  postsCount?: number;
+  followersCount?: number;
+  followingCount?: number;
 }

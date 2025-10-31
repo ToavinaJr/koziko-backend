@@ -7,6 +7,7 @@ import {
   Param, 
   Delete, 
   Put,
+  Query,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -24,8 +25,8 @@ export class PostsController {
   }
 
   @Get()
-  findAll() {
-    return this.postsService.findAll();
+  findAll(@Query('authorId') authorId?: string) {
+    return this.postsService.findAll(authorId);
   }
 
   @Get(':id')

@@ -19,11 +19,21 @@ export class PostsService {
     return await this.findOne(savedPost.id);
   }
 
-  async findAll(): Promise<Post[]> {
-    return await this.postsRepository.find({
+  async findAll(authorId?: string): Promise<Post[]> {
+    const findOptions: any = {
       relations: ['author', 'comments', 'comments.author'],
       order: { createdAt: 'DESC' },
-    });
+    };
+
+    if (authorId) {
+      // Filter by authorId
+      return await this.postsRepository.find({
+        where: { authorId },
+        ...findOptions,
+      });
+    }
+
+    return await this.postsRepository.find(findOptions);
   }
 
   async findOne(id: string): Promise<Post> {

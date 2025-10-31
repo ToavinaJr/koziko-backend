@@ -44,6 +44,9 @@ import { UploadsModule } from './uploads/uploads.module';
     MessagesModule,
     NotificationsModule,
     UploadsModule,
+    // WebRTC signaling
+    // Keep WebrtcModule last to avoid circular deps with Jwt
+    require('./webrtc/webrtc.module').WebrtcModule,
   ],
 })
 export class AppModule {}
