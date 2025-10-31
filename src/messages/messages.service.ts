@@ -216,6 +216,21 @@ export class MessagesService {
   }
 
   /**
+   * Delete a conversation (all messages between two users)
+   */
+  async deleteConversation(userId: string, otherUserId: string): Promise<void> {
+    const conversationId = this.generateConversationId(userId, otherUserId);
+    
+    const messages = await this.messagesRepository.find({
+      where: { conversationId },
+    });
+
+    if (messages.length > 0) {
+      await this.messagesRepository.remove(messages);
+    }
+  }
+
+  /**
    * Get all messages for a group
    */
   async getGroupMessages(groupId: string): Promise<Message[]> {

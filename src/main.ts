@@ -12,14 +12,13 @@ async function bootstrap() {
   
   // Enable CORS FIRST - before any other middleware
   app.enableCors({
-    origin: true, // Allow all origins in development
+    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'], // Explicit origins
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin'],
     exposedHeaders: ['Content-Range', 'X-Content-Range'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
-    maxAge: 86400, // 24 hours
   });
   
   // Serve static files from uploads directory

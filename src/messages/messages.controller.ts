@@ -50,6 +50,15 @@ export class MessagesController {
   }
 
   /**
+   * Delete a direct conversation with another user
+   * DELETE /messages/conversations/:otherUserId
+   */
+  @Delete('conversations/:otherUserId')
+  deleteConversation(@Param('otherUserId') otherUserId: string, @Request() req) {
+    return this.messagesService.deleteConversation(req.user.id, otherUserId);
+  }
+
+  /**
    * Get messages for a direct conversation with another user
    * GET /messages/conversation/:otherUserId
    */
