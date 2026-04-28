@@ -1,6 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { GlobalExceptionFilter } from './common';
 import { json, urlencoded } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
@@ -42,6 +43,9 @@ async function bootstrap() {
   // Increase payload size limit for image uploads (50MB)
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
+
+  // Enable global exception filter (must be before validation pipe)
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Enable validation
   app.useGlobalPipes(new ValidationPipe({
