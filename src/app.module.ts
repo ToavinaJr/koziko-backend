@@ -9,6 +9,8 @@ import { GroupsModule } from './groups/groups.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -47,6 +49,12 @@ import { UploadsModule } from './uploads/uploads.module';
     // WebRTC signaling
     // Keep WebrtcModule last to avoid circular deps with Jwt
     require('./webrtc/webrtc.module').WebrtcModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule {}
