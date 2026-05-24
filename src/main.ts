@@ -103,7 +103,6 @@ async function bootstrap() {
     origin: (origin, callback) => {
       if (!origin) return callback(null, true);
       
-      // Check if origin is allowed
       const isAllowed = allowedOrigins.some((allowed) => {
         if (typeof allowed === 'string') return allowed === origin;
         if (allowed instanceof RegExp) return allowed.test(origin);
@@ -162,7 +161,7 @@ async function bootstrap() {
   // Global Prefix (API Versioning)
   // ========================================
   app.setGlobalPrefix('api/v1', {
-    exclude: ['/', 'health'], // Exclut les routes racine et health
+    exclude: ['/', 'health'],
   });
 
   // ========================================
