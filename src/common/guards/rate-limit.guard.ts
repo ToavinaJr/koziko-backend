@@ -2,7 +2,8 @@ import {
   Injectable,
   CanActivate,
   ExecutionContext,
-  TooManyRequestsException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 
 interface RateLimitConfig {
@@ -60,8 +61,13 @@ export class RateLimitGuard implements CanActivate {
     metadata.count++;
 
     if (metadata.count > this.config.maxRequests) {
-      throw new TooManyRequestsException(
-        `Too many requests from ${ipAddress}. Please try again later.`,
+      throw new HttpException(
+        {
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+          message: `Too many requests from ${ipAddress}. Please try again later.`,
+          error: 'Too Many Requests',
+        },
+        HttpStatus.TOO_MANY_REQUESTS, // Code 429
       );
     }
 
