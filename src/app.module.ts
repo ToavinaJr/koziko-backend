@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ThrottlerModule } from '@nestjs/throttler';
+// Retire temporairement ces imports
+// import { APP_GUARD } from '@nestjs/core';
+// import { ThrottlerGuard } from '@nestjs/throttler';
+
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { PostsModule } from './posts/posts.module';
@@ -9,8 +14,6 @@ import { GroupsModule } from './groups/groups.module';
 import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
-import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -37,13 +40,14 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
       }),
     }),
 
+    // Throttler
     ThrottlerModule.forRoot([
       {
-        ttl: 60000, // 60 secondes (1 minute)
-        limit: 10,  // 10 requêtes max par minute
+        ttl: 60000,
+        limit: 10,
       },
     ]),
-    
+
     // Feature modules
     AuthModule,
     UsersModule,
@@ -53,15 +57,17 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
     MessagesModule,
     NotificationsModule,
     UploadsModule,
+
     // WebRTC signaling
-    // Keep WebrtcModule last to avoid circular deps with Jwt
     require('./webrtc/webrtc.module').WebrtcModule,
   ],
+  
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
+    // ⚠️ RETIRE TEMPORAIREMENT le guard global
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: ThrottlerGuard,
+    // },
   ],
 })
 export class AppModule {}
