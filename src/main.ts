@@ -164,7 +164,6 @@ async function bootstrap() {
     exclude: ['/', 'health'],
   });
 
-  // ========================================
   // Health Check & Root Route
   // ========================================
   const server = app.getHttpAdapter().getInstance();
