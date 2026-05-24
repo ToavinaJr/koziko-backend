@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { RateLimitGuard } from '../common';
 import { UsersService } from '../users/users.service';
 
 @Controller('auth')
@@ -15,6 +16,7 @@ export class AuthController {
   ) {}
 
   @Post('register')
+  @UseGuards(new RateLimitGuard({ windowMs: 900000, maxRequests: 5 })) // 5 attempts per 15 min
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(
       registerDto.email,
@@ -25,6 +27,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @UseGuards(new RateLimitGuard({ windowMs: 900000, maxRequests: 5 })) // 5 attempts per 15 min
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto.email, loginDto.password);
   }
