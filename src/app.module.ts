@@ -37,6 +37,13 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
       }),
     }),
 
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000, // 60 secondes (1 minute)
+        limit: 10,  // 10 requêtes max par minute
+      },
+    ]),
+    
     // Feature modules
     AuthModule,
     UsersModule,
