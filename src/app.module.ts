@@ -18,7 +18,7 @@ import { UploadsModule } from './uploads/uploads.module';
     // Configuration
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: '.env',
+      envFilePath: ['.env-prod', '.env'],
     }),
 
     // Database
@@ -27,14 +27,17 @@ import { UploadsModule } from './uploads/uploads.module';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        host: configService.get('DATABASE_HOST'),
-        port: configService.get('DATABASE_PORT'),
-        username: configService.get('DATABASE_USER'),
-        password: configService.get('DATABASE_PASSWORD'),
-        database: configService.get('DATABASE_NAME'),
+        url: configService.get<string>('DATABASE_URL'),
+        host: configService.get<string>('DATABASE_HOST'),
+        port: configService.get<string | number>('DATABASE_PORT')
+          ? Number(configService.get<string | number>('DATABASE_PORT'))
+          : undefined,
+        username: configService.get<string>('DATABASE_USER'),
+        password: configService.get<string>('DATABASE_PASSWORD'),
+        database: configService.get<string>('DATABASE_NAME'),
         entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: configService.get('NODE_ENV') === 'development',
-        logging: configService.get('NODE_ENV') === 'development',
+        synchronize: configService.get<string>('NODE_ENV') === 'development',
+        logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
 
