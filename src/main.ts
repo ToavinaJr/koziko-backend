@@ -23,8 +23,20 @@ async function bootstrap() {
       optionsSuccessStatus: 204,
     });
   } else {
+    // In production, read allowed origin(s) from env var `FRONTEND_URL`.
+    // Support a comma-separated list of allowed origins.
+    const raw = process.env.FRONTEND_URL || '';
+    const allowedOrigins = raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const origins = allowedOrigins.length > 0 ? allowedOrigins : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+    console.log('✅ CORS allowed origins:', origins);
+
     app.enableCors({
-      origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+      origin: origins,
       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With', 'Origin'],
       exposedHeaders: ['Content-Range', 'X-Content-Range'],
