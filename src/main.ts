@@ -5,7 +5,40 @@ import { json, urlencoded } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
+function maskValue(value: string | undefined, visibleChars = 4): string {
+  if (!value) {
+    return '<undefined>';
+  }
+
+  if (value.length <= visibleChars * 2) {
+    return `${value.slice(0, 2)}***`;
+  }
+
+  return `${value.slice(0, visibleChars)}***${value.slice(-visibleChars)}`;
+}
+
+function logEnvironmentDebug() {
+  const databaseUrl = process.env.DATABASE_URL;
+  const frontendUrl = process.env.FRONTEND_URL;
+
+  console.log('🧪 Environment debug:');
+  console.log('  NODE_ENV =', process.env.NODE_ENV ?? '<undefined>');
+  console.log('  PORT =', process.env.PORT ?? '<undefined>');
+  console.log('  FRONTEND_URL =', frontendUrl ?? '<undefined>');
+  console.log('  DATABASE_URL =', databaseUrl ? maskValue(databaseUrl, 12) : '<undefined>');
+  console.log('  DATABASE_HOST =', process.env.DATABASE_HOST ?? '<undefined>');
+  console.log('  DATABASE_PORT =', process.env.DATABASE_PORT ?? '<undefined>');
+  console.log('  DATABASE_USER =', process.env.DATABASE_USER ?? '<undefined>');
+  console.log('  DATABASE_NAME =', process.env.DATABASE_NAME ?? '<undefined>');
+  console.log('  JWT_SECRET =', maskValue(process.env.JWT_SECRET, 6));
+  console.log('  JWT_REFRESH_SECRET =', maskValue(process.env.JWT_REFRESH_SECRET, 6));
+  console.log('  GOOGLE_CLIENT_ID =', maskValue(process.env.GOOGLE_CLIENT_ID, 8));
+  console.log('  GOOGLE_CLIENT_SECRET =', maskValue(process.env.GOOGLE_CLIENT_SECRET, 8));
+}
+
 async function bootstrap() {
+  logEnvironmentDebug();
+
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });

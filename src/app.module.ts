@@ -13,6 +13,18 @@ import { MessagesModule } from './messages/messages.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UploadsModule } from './uploads/uploads.module';
 
+function maskValue(value: string | undefined, visibleChars = 4): string {
+  if (!value) {
+    return '<undefined>';
+  }
+
+  if (value.length <= visibleChars * 2) {
+    return `${value.slice(0, 2)}***`;
+  }
+
+  return `${value.slice(0, visibleChars)}***${value.slice(-visibleChars)}`;
+}
+
 @Module({
   imports: [
     // Configuration
@@ -26,6 +38,9 @@ import { UploadsModule } from './uploads/uploads.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
+        // Debug: show the DB target used by TypeORM without exposing secrets.
+        // This helps verify the Render/Neon connection before the first query.
+        ...(console.log('🗄️ TypeORM DB target:'), console.log('  DATABASE_URL =', maskValue(configService.get<string>('DATABASE_URL'), 12)), console.log('  DATABASE_HOST =', configService.get<string>('DATABASE_HOST') ?? '<undefined>'), console.log('  DATABASE_PORT =', configService.get<string | number>('DATABASE_PORT') ?? '<undefined>'), console.log('  DATABASE_NAME =', configService.get<string>('DATABASE_NAME') ?? '<undefined>'), {}),
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         host: configService.get<string>('DATABASE_HOST'),
